@@ -1,0 +1,269 @@
+APACHE 2.2 STATUS:                                              -*-text-*-
+Last modified at [$Date$]
+
+The current version of this file can be found at:
+
+  * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.2.x/STATUS
+
+Documentation status is maintained seperately and can be found at:
+
+  * docs/STATUS in this source tree, or
+  * http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/STATUS
+
+Consult the following STATUS files for information on related projects:
+
+  * http://svn.apache.org/repos/asf/apr/apr/trunk/STATUS
+  * http://svn.apache.org/repos/asf/apr/apr-util/trunk/STATUS
+
+Patches considered for backport are noted in their branches' STATUS:
+
+  * http://svn.apache.org/repos/asf/httpd/httpd/branches/1.3.x/STATUS
+  * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.0.x/STATUS
+  * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.2.x/STATUS
+
+
+Release history:
+    [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
+          while x.{even}.z versions are Stable/GA releases.]
+
+    2.2.7   : In development
+    2.2.6   : Released September 7, 2007.
+    2.2.5   : Tagged August 10, 2007, not released.
+    2.2.4   : Released on January 9, 2007 as GA.
+    2.2.3   : Released on July 28, 2006 as GA.
+    2.2.2   : Released on May 1, 2006 as GA.
+    2.2.1   : Tagged on April 1, 2006, not released.
+    2.2.0   : Released on December 1, 2005 as GA.
+    2.1.10  : Tagged on November 19, 2005, not released.
+    2.1.9   : Released on November 5, 2005 as beta.
+    2.1.8   : Released on October 1, 2005 as beta.
+    2.1.7   : Released on September 12, 2005 as beta.
+    2.1.6   : Released on June 27, 2005 as alpha.
+    2.1.5   : Tagged on June 17, 2005.
+    2.1.4   : not released.
+    2.1.3   : Released on  February 22, 2005 as alpha.
+    2.1.2   : Released on December 8, 2004 as alpha.
+    2.1.1   : Released on November 19, 2004 as alpha.
+    2.1.0   : not released.
+
+
+Contributors looking for a mission:
+
+    * Just do an egrep on "TODO" or "XXX" in the source.
+
+    * Review the bug database at: http://issues.apache.org/bugzilla/
+
+    * Review the "PatchAvailable" bugs in the bug database:
+
+      https://issues.apache.org/bugzilla/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&product=Apache+httpd-2&keywords=PatchAvailable
+
+      After testing, you can append a comment saying "Reviewed and tested".
+
+    * Open bugs in the bug database.
+
+
+CURRENT RELEASE NOTES:
+
+    * Forward binary compatibility is expected of Apache 2.2.x releases, such
+      that no MMN major number changes will occur.  Such changes can only be
+      made in the trunk.
+
+    * All commits to branches/2.2.x must be reflected in SVN trunk,
+      as well, if they apply.  Logical progression is commit to trunk,
+      get feedback and votes on list or in STATUS, then merge into
+      branches/2.2.x, as applicable.
+
+
+RELEASE SHOWSTOPPERS:
+
+PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
+  [ start all new proposals below, under PATCHES PROPOSED. ]
+
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
+   * mod_authn_dbd: Export any additional columns queried in the SQL select
+     into the environment with the name AUTHENTICATE_<COLUMN>. This brings
+     mod_authn_dbd behaviour in line with mod_authnz_ldap.
+     Trunk: http://svn.apache.org/viewvc?view=rev&revision=466865
+            http://svn.apache.org/viewvc?view=rev&revision=571798
+            http://svn.apache.org/viewvc?view=rev&revision=571804
+     +1: minfrin
+     rpluem says: r466865 has a conflict in modules/aaa/mod_auth.h
+                  r571804 has a conflict in docs/manual/mod/mod_authnz_ldap.xml
+                  Without r571838 the documentation for mod_authn_dbd fails
+                  to build.
+
+    * multiple files,	Trivial cleanups
+      PR: 39518 - Christophe JAILLET
+      http://svn.apache.org/viewvc?view=rev&revision=557837
+      http://svn.apache.org/viewvc?view=rev&revision=557972
+      +1: rpluem
+      niq: this isn't a straight backport (which is why I dropped it).
+      +1 for core, modules/dav, modules/filters, and modules/ssl
+      Not Applicable to modules/aaa
+
+   * mod_include: Add an "if" directive syntax to test whether an URL
+     is accessible, and if so, conditionally display content. This
+     allows a webmaster to hide a link to a private page when the user
+     has no access to that page.
+     http://svn.apache.org/viewvc?view=rev&revision=571872
+     http://svn.apache.org/viewvc?view=rev&revision=571927
+     http://svn.apache.org/viewvc?view=rev&revision=572136
+     +1: minfrin
+
+    * Event MPM: Add clogging_input_filters to the conn_rec, enabling mod_ssl
+      to revert to the Worker MPM IO behavoirs, rather than just hanging, when 
+      using the Event MPM. (minor MMN bump)
+      Trunk version of patch:
+        http://svn.apache.org/viewvc?view=rev&revision=546328
+        http://svn.apache.org/viewvc?view=rev&revision=546650
+        http://svn.apache.org/viewvc?view=rev&revision=546715
+      2.2.x version of patch:
+        http://people.apache.org/~pquerna/eventmpm-ssl-input-2.2.x.patch
+    +1: pquerna, jim
+
+    * mod_rewrite: Add option to suppress URL unescaping
+      PR 34602
+      http://svn.apache.org/viewvc?view=rev&revision=573831
+      +1: niq
+      +0: rpluem says: As per discussion on dev@ this should be optimized
+      further in trunk first before backporting.
+
+    * mod_rewrite: Also set the Vary header if a rewrite condition is true and
+      uses a HTTP header, but all remaining rewrite conditions are skipped due
+      to the [OR] flag.
+      Trunk version of patch:
+         http://svn.apache.org/viewcvs.cgi?rev=574201&view=rev
+      Backport version for 2.2.x of patch:
+         Trunk version of patch works
+      +1: rpluem, niq
+      +0: jim: I'm curious that if this would result in some
+               "regressions" for some users who either depend on
+               the old behavior or have worked around it...
+          rpluem answers: If r574684 is backported (see below) these users can
+          fix it without workarounds and a clear and promised behaviour.
+          Relying on the above is relying on a buggy iundocumented behaviour,
+          but yes I do this sometimes by myself :-).
+      +1: jim: iff r574684 is also backported
+
+    * mod_rewrite: Add the novary flag to RewriteCond in order to prevent
+      the appending of HTTP headers used in a rewrite condition to the Vary
+      header of the response.
+      Trunk version of patch:
+         http://svn.apache.org/viewcvs.cgi?rev=574684&view=rev
+      Backport version for 2.2.x of patch:
+         Trunk version of patch works
+      +1: rpluem, jim
+
+   * core log.c: Work around possible solutions rejected by apr for
+     the old implementation of apr_proc_create(), and explicitly pass
+     the output and error channels to all log processes created.
+     This goes all the way back to piped logs failing to run on win32.
+     Not in or needed at trunk/, as apr 1.3.0 has the proper fix.
+       http://people.apache.org/~wrowe/httpd-2.0-2.2-procattr-bugfix-log.c.patch
+     +1: wrowe
+     rpluem says: Is this really the correct thing to do on UNIX? I am not sure
+     if all dup2 implementation notice that both fd's are the same. Otherwise
+     they close stdout/stderr first and dup a then closed fd in stdout/stderr,
+     leaving us without stdout/stderr in the child.
+
+   * HTTP protocol: Add "DefaultType none" option.
+     PR 13986 and PR 16139
+     http://svn.apache.org/viewvc?view=rev&revision=579991 (code)
+     http://svn.apache.org/viewvc?view=rev&revision=580502 (docs)
+     http://svn.apache.org/viewvc?view=rev&revision=584842 (docs)
+     +1: niq, rpluem
+     rpluem says: IMHO the DefaultType documentation is now somewhat confusing
+     (e.g. the server must add, but sometimes is better not to) and should be
+     rewritten.
+     jim says: Is rpluem's concern addressed?
+     niq says: Yes, when we add r584842 to the proposal.
+     rpluem says: Yes.
+     
+   * mod_proxy_http: Don't mangle proxied URLs
+     PR 42592
+     http://svn.apache.org/viewvc/httpd/httpd/trunk/modules/proxy/mod_proxy_http.c?r1=582655&r2=583803&pathrev=583803
+     +1: niq
+     -1: jim: As per Roy, (forward) proxies should not check
+              the URI. See r583466 and r583803.
+     niq: updated proposal to address Roy & Jim's points.
+     rpluem: The first hunk of your patch fails (the include) because it is
+     already there. Remove this and I am +1.
+
+   * core: backport ap_send_interim_response API
+     http://svn.apache.org/viewvc?view=rev&revision=582630
+     http://svn.apache.org/viewvc?view=rev&revision=582652
+     +1: niq
+     niq says: It has been suggested the function should move to http_filters.
+     I'm OK with that if others feel happier that way.  The function
+     declaration presumably remains in http_protocol.h, so no API change.
+
+   * mod_proxy_http: Correctly forward unexpected interim (HTTP 1xx) responses
+     PR 16518
+     http://svn.apache.org/viewvc?view=rev&revision=582631
+     +1: niq, rpluem
+
+PATCHES/ISSUES THAT ARE STALLED
+
+    * mod_ldap, mod_authnzldap: Add support for nested groups (i.e. the ability
+      to authorize an authenticated user via a "require ldap-group X" directive
+      where the user is not in group X, but is in a subgroup contained in X.
+      PR: 42891
+      http://svn.apache.org/viewvc?view=rev&revision=560373
+      http://svn.apache.org/viewvc?view=rev&revision=562165
+      A version of the patch specific to the 2.2 branch (i.e. the patch that
+      would be used for backport) can be found at:
+      http://people.apache.org/~rederpj/NestedGroups_2.2.xBranch.diff 
+      +1: rederpj
+      -0: bnicholes - Unless this is considered to be a significant deficiency in the
+                       authnz_ldap 2.2 functionality, I would rather see this as new
+		       functionality going forward in 2.4 rather than backported to
+		       2.2. We need new functionality to push us forward rather than
+		       give us an excuse to stay where we are.
+      rederpj says: I'm working on a project based on Apache 2.2.x which needs this code
+          and I would much prefer to use official Apache code than end up using a private
+          patch. It isn't possible in the short term for us to move to trunk. It just
+          happened that code I had written to add this function lined up with PR 42891.
+          I was going to submit it and work to get it backported either way.
+      rpluem says: I am still missing a minor bump due to the changes done
+      in util_ldap.h. This is an extension of a public API.
+      trawick says: The new directives should be documented in trunk,
+          so that docs are available for backport at the same time.
+
+   * beos MPM: Create pmain pool and run modules' child_init hooks when
+     entering ap_mpm_run(), then destroy pmain when exiting ap_mpm_run().
+     Otherwise modules' child_init hooks appear to never be executed.
+     Also, destroying pmain ensures that cleanups registered in modules'
+     child_init hooks are performed (e.g., mod_log_config and mod_dbd).
+     Trunk version of patch:
+       http://svn.apache.org/viewvc?view=rev&revision=491922
+     2.2.x version of patch:
+       http://people.apache.org/~chrisd/patches/mod_dbd_pools_groups/mpm_child_init-beos-2.2.x.patch
+     +0: chrisd (abstaining; unable to test)
+
+    * PKCS#7: backport PCKS#7 patches from trunk.
+      +1 ben
+      jerenkrantz: What's the revision number to backport?
+      wrowe asks: ditto jerenkrantz
+      sctemme: svn blame suggests r424707
+      rpluem: Digging through the history suggests that
+              r424735
+              r424821
+              r424823
+              need to be added to this. See also
+              http://mail-archives.apache.org/mod_mbox/httpd-dev/200607.mbox/%3c20060723093125.GA19423@redhat.com%3e
+              and follow ups for more details.
+
+    * mod_proxy: Support variable interpolation in reverse proxy configuration
+      http://svn.apache.org/viewvc?view=rev&revision=421686  (code)
+      http://svn.apache.org/viewvc?view=rev&revision=422178  (code)
+      http://svn.apache.org/viewvc/httpd/httpd/trunk/docs/manual/mod/mod_proxy.xml?r1=420990&r2=421725 (docs)
+      +1: niq, mturk
+      -1: wrowe notes; modifying the existing syntax makes collaboration 
+          impossible by an admin team - unexpected side effects and the rest.
+          ProxyPassEnv* or ProxyPassSubstitute* directives that add this
+          behavior on a pattern-by-pattern basis would win my -1 to a +1,
+          and solve the performance hits noted by niq on an 80/20 basis.
+
