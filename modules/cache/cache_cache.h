@@ -78,30 +78,35 @@ void cache_free(cache_cache_t *c);
  * @param c the cache
  * @param key the key
  */
+TM_CALLABLE
 void* cache_find(cache_cache_t* c, const char *key);
 /** 
  * insert a entry into the cache
  * @param c the cache
  * @param entry the entry
  */
+TM_CALLABLE
 void cache_update(cache_cache_t* c, void *entry);
 /** 
  * insert a entry into the cache
  * @param c the cache
  * @param entry the entry
  */
+TM_CALLABLE
 void cache_insert(cache_cache_t* c, void *entry);
 /**
  * pop the lowest priority item off
  * @param c the cache
  * @returns the entry or NULL
  */
+TM_CALLABLE
 void* cache_pop(cache_cache_t* c);
 /** 
  * remove an item from the cache 
  * @param c the cache
  * @param entry the actual entry (from a find)
  */
+TM_CALLABLE
 apr_status_t cache_remove(cache_cache_t* c, void *entry);
 #ifdef __cplusplus
 }

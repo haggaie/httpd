@@ -31,6 +31,9 @@
 #define left(i) (2*(i))
 #define right(i) ((2*(i))+1)
 #define parent(i) ((i)/2)
+
+#include "util_tm.h"
+
 /*
  *  Priority queue structure
  */
@@ -179,6 +182,7 @@ void cache_pq_change_priority(cache_pqueue_t *q,
         cache_pq_percolate_down(q, posn);
 }
 
+TM_CALLABLE
 apr_status_t cache_pq_remove(cache_pqueue_t *q, void *d)
 {
     apr_ssize_t posn = q->get(d);

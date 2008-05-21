@@ -33,6 +33,8 @@
 #include <stdio.h>
 #endif
 
+#include "util_tm.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,11 +82,13 @@ cache_pqueue_t *cache_pq_init(apr_ssize_t n,
  * free all memory used by the queue
  * @param q the queue
  */
+TM_CALLABLE
 void cache_pq_free(cache_pqueue_t *q);
 /**
  * return the size of the queue.
  * @param q the queue
  */
+TM_CALLABLE
 apr_ssize_t cache_pq_size(cache_pqueue_t *q);
 
 /**
@@ -93,6 +97,7 @@ apr_ssize_t cache_pq_size(cache_pqueue_t *q);
  * @param d the item
  * @return APR_SUCCESS on success
  */
+TM_CALLABLE
 apr_status_t cache_pq_insert(cache_pqueue_t *q, void *d);
 
 /*
@@ -101,6 +106,7 @@ apr_status_t cache_pq_insert(cache_pqueue_t *q, void *d);
  * @param old the old priority
  * @param d the entry
  */
+TM_CALLABLE
 void cache_pq_change_priority(cache_pqueue_t *q,
                               long old_priority,
                               long new_priority,
@@ -112,6 +118,7 @@ void cache_pq_change_priority(cache_pqueue_t *q,
  * @param d where to copy the entry to
  * @return NULL on error, otherwise the entry
  */
+TM_CALLABLE
 void *cache_pq_pop(cache_pqueue_t *q);
 
 /**
@@ -120,6 +127,7 @@ void *cache_pq_pop(cache_pqueue_t *q);
  * @param d the entry
  * @return APR_SUCCESS on success
  */
+TM_CALLABLE
 apr_status_t cache_pq_remove(cache_pqueue_t *q, void *d);
 
 /**

@@ -41,7 +41,6 @@
 #include "cache_cache.h"
 #include "ap_provider.h"
 #include "ap_mpm.h"
-#include "apr_thread_mutex.h"
 #if APR_HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -49,6 +48,8 @@
 #if !APR_HAS_THREADS
 #error This module does not currently compile unless you have a thread-capable APR. Sorry!
 #endif
+
+#include "util_tm.h"
 
 module AP_MODULE_DECLARE_DATA mem_cache_module;
 
@@ -75,7 +76,7 @@ typedef struct mem_cache_object {
 } mem_cache_object_t;
 
 typedef struct {
-    apr_thread_mutex_t *lock;
+    DECLARE_SYNC(lock);
     cache_cache_t *cache_cache;
 
     /* Fields set by config directives */
@@ -129,14 +130,14 @@ static void memcache_set_pos(void *a, apr_ssize_t pos)
     cache_object_t *obj = (cache_object_t *)a;
     mem_cache_object_t *mobj = obj->vobj;
 
-    apr_atomic_set32(&mobj->pos, pos);
+    ATOMIC_SET32(&mobj->pos, pos);
 }
 static apr_ssize_t memcache_get_pos(void *a)
 {
     cache_object_t *obj = (cache_object_t *)a;
     mem_cache_object_t *mobj = obj->vobj;
 
-    return apr_atomic_read32(&mobj->pos);
+    return ATOMIC_READ32(&mobj->pos);
 }
 
 static apr_size_t memcache_cache_get_size(void*a)
@@ -166,7 +167,7 @@ static void memcache_cache_free(void*a)
     /* Decrement the refcount to account for the object being ejected
      * from the cache. If the refcount is 0, free the object.
      */
-    if (!apr_atomic_dec32(&obj->refcount)) {
+    if (!ATOMIC_DEC32(&obj->refcount)) {
         cleanup_cache_object(obj);
     }
 }
@@ -232,21 +233,17 @@ static apr_status_t decrement_refcount(void *arg)
      */
     if (!obj->complete) {
         cache_object_t *tobj = NULL;
-        if (sconf->lock) {
-            apr_thread_mutex_lock(sconf->lock);
-        }
+        SYNC_BEGIN(sconf->lock);
         tobj = cache_find(sconf->cache_cache, obj->key);
         if (tobj == obj) {
             cache_remove(sconf->cache_cache, obj);
-            apr_atomic_dec32(&obj->refcount);
+            ATOMIC_DEC32(&obj->refcount);
         }
-        if (sconf->lock) {
-            apr_thread_mutex_unlock(sconf->lock);
-        }
+        SYNC_END(sconf->lock);
     }
 
     /* If the refcount drops to 0, cleanup the cache object */
-    if (!apr_atomic_dec32(&obj->refcount)) {
+    if (!ATOMIC_DEC32(&obj->refcount)) {
         cleanup_cache_object(obj);
     }
     return APR_SUCCESS;
@@ -263,13 +260,11 @@ static apr_status_t cleanup_cache_mem(void *sconfv)
         return APR_SUCCESS;
     }
 
-    if (sconf->lock) {
-        apr_thread_mutex_lock(sconf->lock);
-    }
+    SYNC_BEGIN(sconf->lock);
     obj = cache_pop(co->cache_cache);
     while (obj) {
         /* Iterate over the cache and clean up each unreferenced entry */
-        if (!apr_atomic_dec32(&obj->refcount)) {
+        if (!ATOMIC_DEC32(&obj->refcount)) {
             cleanup_cache_object(obj);
         }
         obj = cache_pop(co->cache_cache);
@@ -278,9 +273,7 @@ static apr_status_t cleanup_cache_mem(void *sconfv)
     /* Cache is empty, free the cache table */
     cache_free(co->cache_cache);
 
-    if (sconf->lock) {
-        apr_thread_mutex_unlock(sconf->lock);
-    }
+    SYNC_END(sconf->lock);
     return APR_SUCCESS;
 }
 /*
@@ -360,7 +353,7 @@ static int create_entity(cache_handle_t *h, cache_type_e type_e,
     mobj->pool = pool;
 
     /* Finish initing the cache object */
-    apr_atomic_set32(&obj->refcount, 1);
+    ATOMIC_SET32(&obj->refcount, 1);
     mobj->total_refs = 1;
     obj->complete = 0;
     obj->vobj = mobj;
@@ -380,9 +373,7 @@ static int create_entity(cache_handle_t *h, cache_type_e type_e,
      * initialized...
      * XXX Need a way to insert into the cache w/o such coarse grained locking
      */
-    if (sconf->lock) {
-        apr_thread_mutex_lock(sconf->lock);
-    }
+    SYNC_BEGIN(sconf->lock);
     tmp_obj = (cache_object_t *) cache_find(sconf->cache_cache, key);
 
     if (!tmp_obj) {
@@ -391,11 +382,9 @@ static int create_entity(cache_handle_t *h, cache_type_e type_e,
          * hashtable in the cache. Refcount should be 2 now, one
          * for this thread, and one for the cache.
          */
-        apr_atomic_inc32(&obj->refcount);
+        ATOMIC_INC32(&obj->refcount);
     }
-    if (sconf->lock) {
-        apr_thread_mutex_unlock(sconf->lock);
-    }
+    SYNC_END(sconf->lock);
 
     if (tmp_obj) {
         /* This thread collided with another thread loading the same object
@@ -432,37 +421,39 @@ static int open_entity(cache_handle_t *h, request_rec *r, const char *key)
     cache_object_t *obj;
 
     /* Look up entity keyed to 'url' */
-    if (sconf->lock) {
-        apr_thread_mutex_lock(sconf->lock);
-    }
+    SYNC_BEGIN(sconf->lock);
     obj = (cache_object_t *) cache_find(sconf->cache_cache, key);
     if (obj) {
         if (obj->complete) {
-            request_rec *rmain=r, *rtmp;
-            apr_atomic_inc32(&obj->refcount);
+            ATOMIC_INC32(&obj->refcount);
             /* cache is worried about overall counts, not 'open' ones */
             cache_update(sconf->cache_cache, obj);
-
-            /* If this is a subrequest, register the cleanup against
-             * the main request. This will prevent the cache object
-             * from being cleaned up from under the request after the
-             * subrequest is destroyed.
-             */
-            rtmp = r;
-            while (rtmp) {
-                rmain = rtmp;
-                rtmp = rmain->main;
-            }
-            apr_pool_cleanup_register(rmain->pool, obj, decrement_refcount,
-                                      apr_pool_cleanup_null);
         }
         else {
             obj = NULL;
         }
     }
 
-    if (sconf->lock) {
-        apr_thread_mutex_unlock(sconf->lock);
+    SYNC_END(sconf->lock);
+
+    /* Register the object for removal from the cache after
+     * cleanup.
+     */
+    if (obj && obj->complete) {
+        request_rec *rmain=r, *rtmp;
+
+        /* If this is a subrequest, register the cleanup against
+         * the main request. This will prevent the cache object
+         * from being cleaned up from under the request after the
+         * subrequest is destroyed.
+         */
+        rtmp = r;
+        while (rtmp) {
+            rmain = rtmp;
+            rtmp = rmain->main;
+        }
+        apr_pool_cleanup_register(rmain->pool, obj, decrement_refcount,
+                                      apr_pool_cleanup_null);
     }
 
     if (!obj) {
@@ -487,9 +478,7 @@ static int remove_entity(cache_handle_t *h)
     cache_object_t *obj = h->cache_obj;
     cache_object_t *tobj = NULL;
 
-    if (sconf->lock) {
-        apr_thread_mutex_lock(sconf->lock);
-    }
+    SYNC_BEGIN(sconf->lock);
 
     /* If the entity is still in the cache, remove it and decrement the
      * refcount. If the entity is not in the cache, do nothing. In both cases
@@ -499,12 +488,10 @@ static int remove_entity(cache_handle_t *h)
     tobj = cache_find(sconf->cache_cache, obj->key);
     if (tobj == obj) {
         cache_remove(sconf->cache_cache, obj);
-        apr_atomic_dec32(&obj->refcount);
+        ATOMIC_DEC32(&obj->refcount);
     }
 
-    if (sconf->lock) {
-        apr_thread_mutex_unlock(sconf->lock);
-    }
+    SYNC_END(sconf->lock);
 
     return OK;
 }
@@ -518,19 +505,15 @@ static int remove_url(cache_handle_t *h, apr_pool_t *p)
     cache_object_t *obj;
     int cleanup = 0;
 
-    if (sconf->lock) {
-        apr_thread_mutex_lock(sconf->lock);
-    }
+    SYNC_BEGIN(sconf->lock);
 
     obj = h->cache_obj;
     if (obj) {
         cache_remove(sconf->cache_cache, obj);
         /* For performance, cleanup cache object after releasing the lock */
-        cleanup = !apr_atomic_dec32(&obj->refcount);
+        cleanup = !ATOMIC_DEC32(&obj->refcount);
     }
-    if (sconf->lock) {
-        apr_thread_mutex_unlock(sconf->lock);
-    }
+    SYNC_END(sconf->lock);
 
     if (cleanup) {
         cleanup_cache_object(obj);
@@ -734,9 +717,7 @@ static apr_status_t store_body(cache_handle_t *h, request_rec *r, apr_bucket_bri
                  * to remove the object, update the size and re-add the
                  * object, all under protection of the lock.
                  */
-                if (sconf->lock) {
-                    apr_thread_mutex_lock(sconf->lock);
-                }
+                SYNC_BEGIN(sconf->lock);
                 /* Has the object been ejected from the cache?
                  */
                 tobj = (cache_object_t *) cache_find(sconf->cache_cache, obj->key);
@@ -747,14 +728,14 @@ static apr_status_t store_body(cache_handle_t *h, request_rec *r, apr_bucket_bri
                     cache_remove(sconf->cache_cache, obj);
                     /* For illustration, cache no longer has reference to the object
                      * so decrement the refcount
-                     * apr_atomic_dec32(&obj->refcount);
+                     * ATOMIC_DEC32(&obj->refcount);
                      */
                     mobj->m_len = obj->count;
 
                     cache_insert(sconf->cache_cache, obj);
                     /* For illustration, cache now has reference to the object, so
                      * increment the refcount
-                     * apr_atomic_inc32(&obj->refcount);
+                     * ATOMIC_INC32(&obj->refcount);
                      */
                 }
                 else if (tobj) {
@@ -767,12 +748,10 @@ static apr_status_t store_body(cache_handle_t *h, request_rec *r, apr_bucket_bri
                     /* Object has been ejected from the cache, add it back to the cache */
                     mobj->m_len = obj->count;
                     cache_insert(sconf->cache_cache, obj);
-                    apr_atomic_inc32(&obj->refcount);
+                    ATOMIC_INC32(&obj->refcount);
                 }
 
-                if (sconf->lock) {
-                    apr_thread_mutex_unlock(sconf->lock);
-                }
+                SYNC_END(sconf->lock);
             }
             /* Open for business */
             ap_log_error(APLOG_MARK, APLOG_INFO, 0, r->server,
@@ -840,7 +819,7 @@ static int mem_cache_post_config(apr_pool_t *p, apr_pool_t *plog,
     }
     ap_mpm_query(AP_MPMQ_IS_THREADED, &threaded_mpm);
     if (threaded_mpm) {
-        apr_thread_mutex_create(&sconf->lock, APR_THREAD_MUTEX_DEFAULT, p);
+        INIT_SYNC(sconf->lock);
     }
 
     sconf->cache_cache = cache_init(sconf->max_object_cnt,

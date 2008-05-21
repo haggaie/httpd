@@ -28,6 +28,8 @@
 #include <string.h>
 #endif
 
+#include "util_tm.h"
+
 struct cache_cache_t  {
     int             max_entries;
     apr_size_t      max_size;
@@ -99,6 +101,7 @@ void cache_update(cache_cache_t* c, void *entry)
     cache_pq_change_priority(c->pq, old_priority, new_priority, entry);
 }
 
+TM_CALLABLE
 void cache_insert(cache_cache_t* c, void *entry)
 {
     void *ejected = NULL;

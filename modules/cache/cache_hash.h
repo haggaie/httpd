@@ -82,6 +82,7 @@ void cache_hash_free(cache_hash_t *ht);
  * @remark If the value is NULL the hash entry is deleted.
  * @return The value of the deleted cache entry (so the caller can clean it up).
  */
+TM_CALLABLE
 void* cache_hash_set(cache_hash_t *ht, const void *key,
                                      apr_ssize_t klen, const void *val);
 
@@ -92,6 +93,7 @@ void* cache_hash_set(cache_hash_t *ht, const void *key,
  * @param klen Length of the key. Can be CACHE_HASH_KEY_STRING to use the string length.
  * @return Returns NULL if the key is not present.
  */
+TM_CALLABLE
 void* cache_hash_get(cache_hash_t *ht, const void *key,
                                    apr_ssize_t klen);
 

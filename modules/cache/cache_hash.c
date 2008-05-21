@@ -26,6 +26,7 @@
 #include <string.h>
 #endif
 
+#include "util_tm.h"
 
 /*
  * The internal form of a hash table.
@@ -240,6 +241,7 @@ static cache_hash_entry_t **find_entry(cache_hash_t *ht,
     return hep;
 }
 
+TM_CALLABLE
 void* cache_hash_get(cache_hash_t *ht,
                                    const void *key,
                                    apr_ssize_t klen)
@@ -252,6 +254,7 @@ void* cache_hash_get(cache_hash_t *ht,
         return NULL;
 }
 
+TM_CALLABLE
 void* cache_hash_set(cache_hash_t *ht,
                                      const void *key,
                                      apr_ssize_t klen,

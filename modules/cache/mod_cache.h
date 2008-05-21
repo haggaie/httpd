@@ -72,6 +72,8 @@
 
 #include "apr_atomic.h"
 
+#include "util_tm.h"
+
 #ifndef MAX
 #define MAX(a,b)                ((a) > (b) ? (a) : (b))
 #endif
