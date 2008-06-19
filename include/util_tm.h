@@ -32,6 +32,22 @@ inline apr_uint32_t ATOMIC_READ32(const apr_uint32_t* p) {
 }
 
 # define ATOMIC_SET32(x,y) __tm_atomic { (*(x) = (y)); }
+# define MEMCMP             tm_memcmp
+
+TM_CALLABLE
+inline int tm_memcmp(const void *s1, const void *s2, size_t n)
+{
+    const char  * p1 = s1,
+                * p2 = s2;
+    int i;
+    for (i = 0; i < n; ++i)
+    {
+        if (p1[i] < p2[i]) return -1;
+        else if (p1[i] > p2[i]) return 1;
+    }
+    return 0;
+}
+
 #else
 /* Being compiled without TM */
 # define TM_CALLABLE
@@ -46,6 +62,7 @@ inline apr_uint32_t ATOMIC_READ32(const apr_uint32_t* p) {
 # define ATOMIC_INC32(x)   apr_atomic_inc32(x)
 # define ATOMIC_SET32(x,y)   apr_atomic_set32(x,y)
 # define ATOMIC_READ32(x)   apr_atomic_read32(x)
+# define MEMCMP             memcmp
 #endif
 
 #endif /* UTIL_TM_H */

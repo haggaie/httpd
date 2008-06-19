@@ -49,6 +49,7 @@
 #error This module does not currently compile unless you have a thread-capable APR. Sorry!
 #endif
 
+#include <assert.h>
 #include "util_tm.h"
 
 module AP_MODULE_DECLARE_DATA mem_cache_module;
@@ -252,6 +253,8 @@ static apr_status_t cleanup_cache_mem(void *sconfv)
 {
     cache_object_t *obj;
     mem_cache_conf *co = (mem_cache_conf*) sconfv;
+    cache_object_t **objects_to_cleanup;
+    size_t number_of_cache_entries, cleanup_index = 0, i;
 
     if (!co) {
         return APR_SUCCESS;
@@ -261,19 +264,30 @@ static apr_status_t cleanup_cache_mem(void *sconfv)
     }
 
     SYNC_BEGIN(sconf->lock);
-    obj = cache_pop(co->cache_cache);
-    while (obj) {
-        /* Iterate over the cache and clean up each unreferenced entry */
-        if (!ATOMIC_DEC32(&obj->refcount)) {
-            cleanup_cache_object(obj);
-        }
+    number_of_cache_entries = cache_number_of_entries(co->cache_cache);
+    if (number_of_cache_entries > 0) {
+        objects_to_cleanup = malloc(
+            number_of_cache_entries*sizeof(cache_object_t*));
+        assert(objects_to_cleanup);
         obj = cache_pop(co->cache_cache);
+        while (obj) {
+            /* Iterate over the cache and clean up each unreferenced entry */
+            if (!ATOMIC_DEC32(&obj->refcount)) {
+                objects_to_cleanup[cleanup_index++] = obj;
+            }
+            obj = cache_pop(co->cache_cache);
+        }
     }
 
     /* Cache is empty, free the cache table */
     cache_free(co->cache_cache);
 
     SYNC_END(sconf->lock);
+
+    /* Now cleanup all the cache objects */
+    for (i = 0; i < cleanup_index; ++i)
+        cleanup_cache_object(objects_to_cleanup[i]);
+
     return APR_SUCCESS;
 }
 /*

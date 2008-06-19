@@ -221,7 +221,7 @@ static cache_hash_entry_t **find_entry(cache_hash_t *ht,
          hep = &he->next, he = *hep) {
         if (he->hash == hash &&
             he->klen == klen &&
-            memcmp(he->key, key, klen) == 0)
+            MEMCMP(he->key, key, klen) == 0)
             break;
     }
     if (he || !val)

@@ -72,6 +72,7 @@ cache_cache_t* cache_init(int max_entries,
  * free up the cache
  * @param c the cache
  */
+TM_CALLABLE
 void cache_free(cache_cache_t *c);
 /**
  * find a entry in the cache, incrementing the frequency if found
@@ -108,6 +109,12 @@ void* cache_pop(cache_cache_t* c);
  */
 TM_CALLABLE
 apr_status_t cache_remove(cache_cache_t* c, void *entry);
+/** 
+ * return the number of items in the cache
+ * @param c the cache
+ */
+TM_CALLABLE
+apr_size_t cache_number_of_entries(cache_cache_t* c);
 #ifdef __cplusplus
 }
 #endif

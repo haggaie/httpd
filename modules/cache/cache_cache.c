@@ -124,6 +124,9 @@ void cache_insert(cache_cache_t* c, void *entry)
                        CACHE_HASH_KEY_STRING,
                        NULL);
 
+        /* FIXME: Cause this to happen if and when the transaction is
+         * committed. */
+#warning Ignore the warning for the following line (See FIXME here)
         ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL, "Cache Purge of %s",c->key_entry(ejected));
         c->current_size -= c->size_entry(ejected);
         c->free_entry(ejected);
@@ -165,4 +168,9 @@ apr_status_t cache_remove(cache_cache_t *c, void *entry)
     c->current_size -= entry_size;
 
     return APR_SUCCESS;
+}
+
+CACHE_DECLARE(apr_size_t) cache_number_of_entries(cache_cache_t* c)
+{
+    return cache_pq_size(c->pq);
 }

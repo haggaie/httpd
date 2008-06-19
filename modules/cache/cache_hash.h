@@ -70,6 +70,7 @@ cache_hash_t* cache_hash_make(apr_size_t size);
  *         not removed from the cache prior to calling cache_hash_free()
  *         will be unaccessable.
  */
+TM_CALLABLE
 void cache_hash_free(cache_hash_t *ht);
 
 
