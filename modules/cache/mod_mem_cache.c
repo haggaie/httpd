@@ -848,6 +848,13 @@ static int mem_cache_post_config(apr_pool_t *p, apr_pool_t *plog,
                                     memcache_cache_free);
     apr_pool_cleanup_register(p, sconf, cleanup_cache_mem, apr_pool_cleanup_null);
 
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, "mem_cache: Configured and started. "
+#if defined(_TM)
+            "Using icc TM."
+#else
+            "Using pthread locks."
+#endif
+            );
     if (sconf->cache_cache)
         return OK;
 

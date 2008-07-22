@@ -13,19 +13,19 @@
 
 /*# define ATOMIC_DEC32(x) (_Pragma ("omp atomic") --(*(x)))
   # define ATOMIC_INC32(x) (_Pragma ("omp atomic") ++(*(x))) */
-inline apr_uint32_t ATOMIC_DEC32(apr_uint32_t* p) {
+TM_CALLABLE inline apr_uint32_t ATOMIC_DEC32(apr_uint32_t* p) {
     apr_uint32_t res;
      __tm_atomic { res = --*p; }
     return res;
 }
 
-inline apr_uint32_t ATOMIC_INC32(apr_uint32_t* p) {
+TM_CALLABLE inline apr_uint32_t ATOMIC_INC32(apr_uint32_t* p) {
     apr_uint32_t res;
      __tm_atomic { res = ++*p; }
     return res;
 }
 
-inline apr_uint32_t ATOMIC_READ32(const apr_uint32_t* p) {
+TM_CALLABLE inline apr_uint32_t ATOMIC_READ32(const apr_uint32_t* p) {
     apr_uint32_t res;
      __tm_atomic { res = *p; }
     return res;
