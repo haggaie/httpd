@@ -1,5 +1,7 @@
 *.[oa]
 *.l[oa]
+*.loT
+*.slo
 .deps
 .*.swp
 Makefile
@@ -92,3 +94,6 @@ support/logresolve.pl
 support/phf_abuse_log.cgi
 support/rotatelogs
 support/split-logfile
+cscope.out
+itm.log
+tags
