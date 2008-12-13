@@ -126,8 +126,8 @@ void cache_insert(cache_cache_t* c, void *entry)
 
         /* FIXME: Cause this to happen if and when the transaction is
          * committed. */
-#warning Ignore the warning for the following line (See FIXME here)
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL, "Cache Purge of %s",c->key_entry(ejected));
+        // #warning Ignore the warning for the following line (See FIXME here)
+        //ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL, "Cache Purge of %s",c->key_entry(ejected));
         c->current_size -= c->size_entry(ejected);
         c->free_entry(ejected);
         c->total_purges++;
