@@ -155,6 +155,7 @@ void cache_hash_this(cache_hash_index_t *hi,
  * that hash entries can be removed.
  */
 
+TM_CALLABLE
 static cache_hash_entry_t **find_entry(cache_hash_t *ht,
                                        const void *key,
                                        apr_ssize_t klen,

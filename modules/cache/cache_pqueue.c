@@ -88,6 +88,7 @@ apr_ssize_t cache_pq_size(cache_pqueue_t *q)
     return (q->size - 1);
 }
 
+TM_CALLABLE
 static void cache_pq_bubble_up(cache_pqueue_t *q, apr_ssize_t i)
 {
     apr_ssize_t parent_node;
@@ -106,6 +107,7 @@ static void cache_pq_bubble_up(cache_pqueue_t *q, apr_ssize_t i)
     q->set(moving_node, i);
 }
 
+TM_CALLABLE
 static apr_ssize_t maxchild(cache_pqueue_t *q, apr_ssize_t i)
 {
     apr_ssize_t child_node = left(i);
@@ -122,6 +124,7 @@ static apr_ssize_t maxchild(cache_pqueue_t *q, apr_ssize_t i)
     return child_node;
 }
 
+TM_CALLABLE
 static void cache_pq_percolate_down(cache_pqueue_t *q, apr_ssize_t i)
 {
     apr_ssize_t child_node;
