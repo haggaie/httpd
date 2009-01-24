@@ -1,1 +1,3 @@
-./configure --with-mpm=worker --enable-cache --enable-mem-cache=shared CC=icc CXX=icc LD=xild CFLAGS="-Qtm_enabled" --with-included-apr
+./configure --with-mpm=worker --enable-cache --enable-mem-cache=shared CC=icc CXX=icc LD=xild \
+    CFLAGS="-Qtm_enabled" CPPFLAGS="-Qtm_enabled" \
+    --with-included-apr

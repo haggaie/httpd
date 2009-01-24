@@ -852,6 +852,7 @@ static int mem_cache_post_config(apr_pool_t *p, apr_pool_t *plog,
 #if defined(_TM)
             "Using icc TM."
 #else
+#error _TM not enabled
             "Using pthread locks."
 #endif
             );

@@ -50,6 +50,9 @@ inline int tm_memcmp(const void *s1, const void *s2, size_t n)
 
 #else
 /* Being compiled without TM */
+
+#error No _TM defined
+
 # define TM_CALLABLE
 # define TM_PURE
 # include "apr_thread_mutex.h"
