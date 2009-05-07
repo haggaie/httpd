@@ -1,4 +1,12 @@
                                                          -*- coding: utf-8 -*-
+Changes with the transactified cache module version
+
+  *) include/util_tm.h: Create macro definitions header for switching
+     between STM and locks. [Haggai Eran, Ohad Lutzky]
+
+  *) mod_mem_cache: Convert mutex critical sections into transactions, as well
+     as atomic instructions. [Haggai Eran, Ohad Lutzky]
+
 Changes with Apache 2.2.11
 
   *) Worker MPM: Crosscheck that idle workers are still available before using
